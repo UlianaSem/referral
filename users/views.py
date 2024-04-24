@@ -1,7 +1,9 @@
 from rest_framework import views, status
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from users import services
+from users import services, serializers, models
 
 
 class UserAuthAPIView(views.APIView):
@@ -37,3 +39,47 @@ class UserVerificationAPIView(views.APIView):
         response = auth.check_code(code)
 
         return Response(response)
+
+
+class UserProfileRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = models.User.objects.all()
+    serializer_class = serializers.UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class UserCodeAPIView(generics.UpdateAPIView):
+    queryset = models.User.objects.all()
+    serializer_class = serializers.UserCodeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        if instance.entered_code:
+            return Response({
+                'status': status.HTTP_409_CONFLICT,
+                'message': 'Code already entered'
+            })
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        code = serializer.validated_data.get('entered_code')
+        if instance.own_code == code:
+            return Response({
+                'status': status.HTTP_409_CONFLICT,
+                'message': "It's your code"
+            })
+
+        if not models.User.objects.filter(own_code=code).exists():
+            return Response({
+                'status': status.HTTP_400_BAD_REQUEST,
+                'message': 'Code not exists'
+            })
+
+        self.perform_update(serializer)
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
