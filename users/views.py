@@ -71,6 +71,9 @@ class UserProfileRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = serializers.UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        return self.queryset.filter(pk=self.request.user.pk)
+
 
 @extend_schema(tags=["Профиль"])
 @extend_schema_view(
