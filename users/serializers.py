@@ -28,3 +28,32 @@ class UserCodeSerializer(serializers.ModelSerializer):
         fields = [
             'entered_code',
         ]
+
+
+class UserAuthSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.User
+        fields = [
+            'phone'
+        ]
+
+
+class UserVerificationSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(max_length=4)
+
+    class Meta:
+        model = models.User
+        fields = [
+            'phone',
+            'code',
+        ]
+
+
+class ResponseAuthSerializer(serializers.Serializer):
+    status = serializers.IntegerField()
+    message = serializers.CharField()
+
+
+class ResponseCodeSerializer(ResponseAuthSerializer):
+    token = serializers.CharField()

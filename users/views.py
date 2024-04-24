@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import views, status
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -6,8 +7,17 @@ from rest_framework.response import Response
 from users import services, serializers, models
 
 
+@extend_schema(tags=["Регистрация/ авторизация по номеру телефона"])
 class UserAuthAPIView(views.APIView):
 
+    @extend_schema(
+        summary="Авторизоваться по номеру телефона: "
+                "получить проверочный код на телефон",
+        request=serializers.UserAuthSerializer,
+        responses={
+            200: serializers.ResponseAuthSerializer,
+        }
+    )
     def post(self, request, *args, **kwargs):
         phone = request.data.get('phone')
 
@@ -23,8 +33,17 @@ class UserAuthAPIView(views.APIView):
         return Response(response)
 
 
+@extend_schema(tags=["Регистрация/ авторизация по номеру телефона"])
 class UserVerificationAPIView(views.APIView):
 
+    @extend_schema(
+        summary="Авторизоваться по номеру телефона: "
+                "верифицировать проверочный код и получить токен авторизации",
+        request=serializers.UserVerificationSerializer,
+        responses={
+            200: serializers.ResponseCodeSerializer,
+        }
+    )
     def post(self, request, *args, **kwargs):
         phone = request.data.get('phone')
         code = request.data.get('code')
@@ -41,12 +60,24 @@ class UserVerificationAPIView(views.APIView):
         return Response(response)
 
 
+@extend_schema(tags=["Профиль"])
+@extend_schema_view(
+    retrive=extend_schema(
+        summary="Получить профиль пользователя",
+    ),
+)
 class UserProfileRetrieveAPIView(generics.RetrieveAPIView):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
 
+@extend_schema(tags=["Профиль"])
+@extend_schema_view(
+    update=extend_schema(
+        summary="Добавить инвайт-код",
+    ),
+)
 class UserCodeAPIView(generics.UpdateAPIView):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserCodeSerializer
